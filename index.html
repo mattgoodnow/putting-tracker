@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14231d">
+<link rel="manifest" href="./manifest.webmanifest">
+<title>Putting Tracker</title>
+<style>
+:root{color-scheme:dark;--bg:#101713;--panel:#1b2821;--panel2:#24352b;--text:#f2f6f2;--muted:#b4c3b8;--green:#8de0a6;--red:#ff9b91;--line:#34483b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{padding:22px 18px 14px;background:#14231d;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:2}
+h1{font-size:1.45rem;margin:0 0 4px}header p{margin:0;color:var(--muted);font-size:.9rem}
+main{max-width:680px;margin:auto;padding:16px 14px 36px}
+.tabs{display:flex;gap:8px;margin-bottom:16px}.tab{flex:1;border:1px solid var(--line);background:var(--panel);color:var(--text);padding:12px 8px;border-radius:12px;font-weight:700}.tab.active{background:var(--green);color:#102017;border-color:var(--green)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px}
+.label{display:block;color:var(--muted);font-size:.85rem;font-weight:650;margin-bottom:8px}
+select,button,input{font:inherit}select{width:100%;padding:13px;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:12px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
+.stat{background:var(--panel2);padding:13px 8px;border-radius:14px;text-align:center}.stat strong{display:block;font-size:1.45rem}.stat span{display:block;color:var(--muted);font-size:.78rem;margin-top:3px}
+.pct{font-size:2.8rem;font-weight:800;letter-spacing:-1px;text-align:center;margin:4px 0 0}.sub{text-align:center;color:var(--muted);font-size:.9rem}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.action{border:0;border-radius:15px;padding:18px 8px;font-weight:800;font-size:1.1rem;min-height:76px}
+.made{background:var(--green);color:#102017}.missed{background:#512d2b;color:#ffe8e5;border:1px solid #87514b}
+.smallrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:11px;padding:10px 12px;font-weight:650}.danger{color:var(--red)}
+.note{color:var(--muted);font-size:.84rem;margin:10px 0 0}
+h2{font-size:1.1rem;margin:0 0 12px}.hidden{display:none!important}
+table{width:100%;border-collapse:collapse;font-size:.9rem}th,td{text-align:right;padding:10px 4px;border-bottom:1px solid var(--line)}th:first-child,td:first-child{text-align:left}th{color:var(--muted);font-weight:650}
+.progress{height:7px;background:#34483b;border-radius:9px;overflow:hidden;margin-top:6px}.progress div{height:100%;background:var(--green)}
+.session{padding:12px 0;border-bottom:1px solid var(--line)}.session:last-child{border-bottom:0}.sessionhead{display:flex;justify-content:space-between;gap:8px}.session small{color:var(--muted)}
+.empty{color:var(--muted);padding:12px 0}.footer{text-align:center;color:var(--muted);font-size:.78rem;padding:8px}
+@media(min-width:520px){main{padding-top:22px}.card{padding:20px}}
+</style>
+</head>
+<body>
+<header><h1>Putting Tracker</h1><p>Track every putt. Find your range.</p></header>
+<main>
+  <div class="tabs" role="tablist">
+    <button class="tab active" id="recordTab" type="button">Record</button>
+    <button class="tab" id="statsTab" type="button">Stats & History</button>
+  </div>
+  <section id="recordView">
+    <div class="card">
+      <label class="label" for="distance">Putting distance</label>
+      <select id="distance"></select>
+      <div class="stats">
+        <div class="stat"><strong id="madeCount">0</strong><span>Made</span></div>
+        <div class="stat"><strong id="attemptCount">0</strong><span>Attempts</span></div>
+        <div class="stat"><strong id="missCount">0</strong><span>Missed</span></div>
+      </div>
+      <div class="pct" id="percent">—</div><div class="sub">make percentage at this distance</div>
+      <div class="actions">
+        <button class="action made" id="madeBtn" type="button">✓ Made</button>
+        <button class="action missed" id="missedBtn" type="button">✕ Missed</button>
+      </div>
+      <div class="smallrow">
+        <button class="secondary" id="undoBtn" type="button">↶ Undo last putt</button>
+        <button class="secondary" id="finishBtn" type="button">Finish session</button>
+      </div>
+      <p class="note">Your results save automatically on this device. Switch distances whenever you want; all putts count toward the same session until you finish it.</p>
+    </div>
+    <div class="card">
+      <h2>This session by distance</h2>
+      <div id="sessionTable"></div>
+    </div>
+  </section>
+  <section id="statsView" class="hidden">
+    <div class="card">
+      <h2>All-time totals</h2>
+      <div class="stats">
+        <div class="stat"><strong id="allMade">0</strong><span>Made</span></div>
+        <div class="stat"><strong id="allAttempts">0</strong><span>Attempts</span></div>
+        <div class="stat"><strong id="allPct">—</strong><span>Make %</span></div>
+      </div>
+      <div id="allTable"></div>
+    </div>
+    <div class="card">
+      <h2>Practice history</h2>
+      <div id="history"></div>
+      <div class="smallrow"><button class="secondary" id="exportBtn" type="button">Export backup (JSON)</button><button class="secondary danger" id="clearBtn" type="button">Delete all data</button></div>
+      <p class="note">Export creates a backup file you can keep. Deleting all data cannot be undone unless you have a backup.</p>
+    </div>
+  </section>
+  <div class="footer">Private, local tracking · No account required</div>
+</main>
+<script>
+(() => {
+  const DISTANCES = [10,15,...Array.from({length:25},(_,i)=>16+i)];
+  const KEY = 'puttingTracker.v1';
+  const blankCounts = () => Object.fromEntries(DISTANCES.map(d=>[d,{made:0,attempts:0}]));
+  const newSession = () => ({id:Date.now(),date:new Date().toISOString(),counts:blankCounts(),events:[]});
+  let data;
+  try { data = JSON.parse(localStorage.getItem(KEY)); } catch(e) {}
+  if (!data || !data.current || !data.sessions) data = {current:newSession(),sessions:[]};
+  const $ = id => document.getElementById(id);
+  const distanceSelect = $('distance');
+  DISTANCES.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d+' feet';distanceSelect.appendChild(o)});
+  distanceSelect.value = '20';
+  const pct = (made,attempts) => attempts ? (made/attempts*100).toFixed(1)+'%' : '—';
+  const save = () => { try { localStorage.setItem(KEY,JSON.stringify(data)); } catch(e) { alert('Could not save data. Check your browser storage settings.'); } };
+  const currentCounts = () => data.current.counts;
+  function addPut(made) {
+    const d=Number(distanceSelect.value), c=currentCounts()[d];
+    c.attempts++; if(made)c.made++;
+    data.current.events.push({d,made,at:Date.now()}); save(); render();
+  }
+  function undo() {
+    const e=data.current.events.pop(); if(!e){alert('There are no putts to undo in this session.');return}
+    const c=currentCounts()[e.d];c.attempts--;if(e.made)c.made--;save();render();
+  }
+  function finish() {
+    const total=Object.values(currentCounts()).reduce((s,c)=>s+c.attempts,0);
+    if(!total){alert('Record at least one putt before finishing a session.');return}
+    data.sessions.unshift({id:data.current.id,date:data.current.date,counts:data.current.counts});
+    data.current=newSession();save();render();
+    alert('Session saved to history. Ready for your next practice!');
+  }
+  function totals() {
+    const t=blankCounts();
+    const sessions=[...data.sessions,{counts:data.current.counts}];
+    sessions.forEach(s=>DISTANCES.forEach(d=>{t[d].made+=s.counts[d].made;t[d].attempts+=s.counts[d].attempts}));
+    return t;
+  }
+  function tableHTML(counts) {
+    const rows=DISTANCES.filter(d=>counts[d].attempts>0);
+    if(!rows.length)return '<div class="empty">No putts recorded yet.</div>';
+    return '<table><thead><tr><th>Distance</th><th>Made</th><th>Attempts</th><th>Make %</th></tr></thead><tbody>'+rows.map(d=>{let c=counts[d];return `<tr><td>${d} ft</td><td>${c.made}</td><td>${c.attempts}</td><td>${pct(c.made,c.attempts)}</td></tr>`}).join('')+'</tbody></table>';
+  }
+  function render() {
+    const d=Number(distanceSelect.value), c=currentCounts()[d];
+    $('madeCount').textContent=c.made;$('attemptCount').textContent=c.attempts;$('missCount').textContent=c.attempts-c.made;$('percent').textContent=pct(c.made,c.attempts);
+    $('sessionTable').innerHTML=tableHTML(currentCounts());
+    const t=totals(), allMade=DISTANCES.reduce((s,d)=>s+t[d].made,0), allAttempts=DISTANCES.reduce((s,d)=>s+t[d].attempts,0);
+    $('allMade').textContent=allMade;$('allAttempts').textContent=allAttempts;$('allPct').textContent=pct(allMade,allAttempts);
+    $('allTable').innerHTML=tableHTML(t);
+    const hist=$('history');
+    if(!data.sessions.length) hist.innerHTML='<div class="empty">No completed sessions yet. Tap “Finish session” after a practice session to save it here.</div>';
+    else hist.innerHTML=data.sessions.map(s=>{
+      let made=0,attempts=0;DISTANCES.forEach(d=>{made+=s.counts[d].made;attempts+=s.counts[d].attempts});
+      const date=new Date(s.date).toLocaleString([], {dateStyle:'medium',timeStyle:'short'});
+      const breakdown=DISTANCES.filter(d=>s.counts[d].attempts>0).map(d=>`${d} ft: ${s.counts[d].made}/${s.counts[d].attempts} (${pct(s.counts[d].made,s.counts[d].attempts)})`).join(' · ');
+      return `<div class="session"><div class="sessionhead"><strong>${date}</strong><strong>${pct(made,attempts)}</strong></div><small>${made} made of ${attempts} putts</small><div class="note">${breakdown}</div></div>`;
+    }).join('');
+  }
+  function show(which) {
+    const record=which==='record';
+    $('recordView').classList.toggle('hidden',!record);$('statsView').classList.toggle('hidden',record);
+    $('recordTab').classList.toggle('active',record);$('statsTab').classList.toggle('active',!record);
+  }
+  $('madeBtn').addEventListener('click',()=>addPut(true));
+  $('missedBtn').addEventListener('click',()=>addPut(false));
+  $('undoBtn').addEventListener('click',undo);
+  $('finishBtn').addEventListener('click',finish);
+  distanceSelect.addEventListener('change',render);
+  $('recordTab').addEventListener('click',()=>show('record'));
+  $('statsTab').addEventListener('click',()=>{show('stats');render()});
+  $('exportBtn').addEventListener('click',()=>{
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='putting-tracker-backup.json';a.click();URL.revokeObjectURL(url);
+  });
+  $('clearBtn').addEventListener('click',()=>{
+    if(confirm('Delete every session and all current putts? This cannot be undone.')){data={current:newSession(),sessions:[]};save();render();}
+  });
+  render();
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
+})();
+</script>
+</body>
+</html>
