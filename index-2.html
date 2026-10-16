@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14231d">
+<link rel="manifest" href="./manifest.webmanifest">
+<title>Putting Tracker</title>
+<style>
+:root{color-scheme:dark;--bg:#101713;--panel:#1b2821;--panel2:#24352b;--text:#f2f6f2;--muted:#b4c3b8;--green:#8de0a6;--red:#ff9b91;--line:#34483b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{padding:22px 18px 14px;background:#14231d;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:2}
+h1{font-size:1.45rem;margin:0 0 4px}header p{margin:0;color:var(--muted);font-size:.9rem}
+main{max-width:760px;margin:auto;padding:16px 14px 36px}
+.tabs{display:flex;gap:8px;margin-bottom:16px}.tab{flex:1;border:1px solid var(--line);background:var(--panel);color:var(--text);padding:12px 8px;border-radius:12px;font-weight:700}.tab.active{background:var(--green);color:#102017;border-color:var(--green)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px}
+.label{display:block;color:var(--muted);font-size:.85rem;font-weight:650;margin-bottom:8px}
+select,button,input{font:inherit}select{width:100%;padding:13px;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:12px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
+.stat{background:var(--panel2);padding:13px 8px;border-radius:14px;text-align:center}.stat strong{display:block;font-size:1.3rem;overflow-wrap:anywhere}.stat span{display:block;color:var(--muted);font-size:.78rem;margin-top:3px}
+.feature-stat{background:var(--panel2);padding:16px;border-radius:14px;text-align:center;margin:14px 0}.feature-stat strong{display:block;font-size:2rem}.feature-stat span{color:var(--muted);font-size:.9rem}
+.pct{font-size:2.8rem;font-weight:800;letter-spacing:-1px;text-align:center;margin:4px 0 0}.sub{text-align:center;color:var(--muted);font-size:.9rem}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.action{border:0;border-radius:15px;padding:18px 8px;font-weight:800;font-size:1.1rem;min-height:76px}
+.made{background:var(--green);color:#102017}.missed{background:#512d2b;color:#ffe8e5;border:1px solid #87514b}
+.smallrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:11px;padding:10px 12px;font-weight:650}.danger{color:var(--red)}
+.note{color:var(--muted);font-size:.84rem;margin:10px 0 0}
+h2{font-size:1.1rem;margin:0 0 12px}.hidden{display:none!important}
+table{width:100%;border-collapse:collapse;font-size:.9rem}th,td{text-align:right;padding:10px 4px;border-bottom:1px solid var(--line)}th:first-child,td:first-child{text-align:left}th{color:var(--muted);font-weight:650}
+.session{padding:12px 0;border-bottom:1px solid var(--line)}.session:last-child{border-bottom:0}.sessionhead{display:flex;justify-content:space-between;gap:8px}.session small{color:var(--muted)}
+.empty{color:var(--muted);padding:12px 0}.footer{text-align:center;color:var(--muted);font-size:.78rem;padding:8px}
+.metric-grid{display:grid;grid-template-columns:1fr;gap:12px}.metric-card{background:var(--panel2);border-radius:14px;padding:12px;min-width:0}.metric-card h3{font-size:.98rem;margin:0 0 2px}.metric-card p{color:var(--muted);font-size:.78rem;margin:0 0 8px}.chart-wrap{width:100%;overflow:hidden}.chart-wrap svg{width:100%;height:auto;display:block}.session-metrics{color:var(--muted);font-size:.85rem;margin-top:6px}.session-breakdown{font-size:.83rem;color:var(--muted);margin-top:8px;overflow-wrap:anywhere}
+.notice{background:var(--panel2);border:1px solid var(--green);border-radius:14px;padding:16px;margin-bottom:14px}.notice strong{display:block;margin-bottom:5px}
+button:disabled{opacity:.45}
+dialog{max-width:420px;width:calc(100% - 32px);border:1px solid var(--line);border-radius:18px;background:var(--panel);color:var(--text);padding:22px}dialog::backdrop{background:rgba(0,0,0,.72)}dialog h2{font-size:1.3rem}
+@media(min-width:600px){main{padding-top:22px}.card{padding:20px}.metric-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header><h1>Putting Tracker</h1><p>Feet under you. You can just feel it. Formidable.</p></header>
+<main>
+  <div class="tabs" role="tablist">
+    <button class="tab active" id="recordTab" type="button">Record</button>
+    <button class="tab" id="statsTab" type="button">Stats &amp; History</button>
+  </div>
+  <section id="recordView">
+    <div id="noSession" class="notice hidden"><strong>Your 600-putt block is complete.</strong>Your completed session is saved in history. Start another block whenever you're ready.<div class="smallrow"><button class="secondary" id="startSessionBtn" type="button">Start new 600-putt session</button></div></div>
+    <div class="card" id="recordCard">
+      <div class="sessionhead"><h2 id="sessionTitle">Current session</h2><strong id="sessionProgress">0 / 600</strong></div>
+      <div class="progress"><div id="sessionProgressBar" style="width:0%"></div></div>
+      <p class="note" id="sessionDateNote">Session name is the date you started.</p>
+      <label class="label" for="distance" style="margin-top:16px">Putting distance</label>
+      <select id="distance"></select>
+      <div class="stats">
+        <div class="stat"><strong id="madeCount">0</strong><span>Made</span></div>
+        <div class="stat"><strong id="attemptCount">0</strong><span>Attempts</span></div>
+        <div class="stat"><strong id="missCount">0</strong><span>Missed</span></div>
+      </div>
+      <div class="pct" id="percent">—</div><div class="sub">make percentage at this distance</div>
+      <div class="actions">
+        <button class="action made" id="madeBtn" type="button">✓ Made</button>
+        <button class="action missed" id="missedBtn" type="button">✕ Missed</button>
+      </div>
+      <div class="smallrow"><button class="secondary" id="undoBtn" type="button">↶ Undo last putt</button></div>
+      <p class="note">Your results save automatically on this device. A session can span multiple days. All distances count toward the same 600-putt block.</p>
+    </div>
+    <div class="card"><h2>This session by distance</h2><div id="sessionTable"></div></div>
+  </section>
+  <section id="statsView" class="hidden">
+    <div class="card">
+      <h2>Overall progress</h2>
+      <div class="feature-stat"><strong id="allAverageDistance">—</strong><span>Average Putting Distance · feet per attempt</span></div>
+      <div class="stats">
+        <div class="stat"><strong id="allMade">0</strong><span>Made</span></div>
+        <div class="stat"><strong id="allAttempts">0</strong><span>Attempts</span></div>
+        <div class="stat"><strong id="allPct">—</strong><span>Overall make %</span></div>
+      </div>
+      <div id="allTable"></div>
+      <h2 style="margin-top:20px">Overall statistics</h2>
+      <div id="overallMetrics"></div>
+    </div>
+    <div class="card"><h2>Progress graphs</h2><p class="note">Each point represents a session, from oldest to newest. The vertical axis is labeled in the statistic's units.</p><div id="graphs" class="metric-grid"></div></div>
+    <div class="card">
+      <h2>Session history</h2><div id="history"></div>
+      <div class="smallrow"><button class="secondary" id="exportBtn" type="button">Export backup (JSON)</button><button class="secondary danger" id="clearBtn" type="button">Delete all data</button></div>
+      <p class="note">Export creates a backup file you can keep. Deleting all data cannot be undone unless you have a backup.</p>
+    </div>
+  </section>
+  <div class="footer">Private, local tracking · No account required</div>
+</main>
+<dialog id="completeDialog"><h2>600 putts complete!</h2><p>Your session has been saved to history. You can start another 600-putt block now, or close this message and start one later.</p><div class="smallrow"><button class="secondary" id="laterBtn" type="button">Not now</button><button class="secondary" id="dialogStartBtn" type="button">Start new block</button></div></dialog>
+<script>
+(() => {
+  const DISTANCES = [10,15,...Array.from({length:25},(_,i)=>16+i)];
+  const GOAL = 600;
+  const KEY = 'puttingTracker.v2';
+  const OLD_KEY = 'puttingTracker.v1';
+  const blankCounts = () => Object.fromEntries(DISTANCES.map(d=>[d,{made:0,attempts:0}]));
+  const newSession = () => ({id:Date.now(),date:new Date().toISOString(),counts:blankCounts(),events:[]});
+  let data;
+  try { data = JSON.parse(localStorage.getItem(KEY)); } catch(e) {}
+  if (!data || !Array.isArray(data.sessions)) {
+    // Start clean as requested, but if only the older app data exists, leave it untouched as a backup.
+    data = {current:newSession(),sessions:[]};
+    try { localStorage.setItem(KEY, JSON.stringify(data)); } catch(e) {}
+  }
+  if (data.current === undefined) data.current = newSession();
+  const $ = id => document.getElementById(id);
+  const distanceSelect = $('distance');
+  DISTANCES.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d+' feet';distanceSelect.appendChild(o)});
+  distanceSelect.value = '20';
+  const pct = (made,attempts) => attempts ? (made/attempts*100).toFixed(1)+'%' : '—';
+  const countAttempts = counts => DISTANCES.reduce((s,d)=>s+(counts?.[d]?.attempts||0),0);
+  const countMade = counts => DISTANCES.reduce((s,d)=>s+(counts?.[d]?.made||0),0);
+  const averageDistance = counts => { const n=countAttempts(counts); return n ? DISTANCES.reduce((s,d)=>s+d*(counts[d]?.attempts||0),0)/n : null; };
+  const save = () => { try { localStorage.setItem(KEY,JSON.stringify(data)); } catch(e) { alert('Could not save data. Check your browser storage settings.'); } };
+  const currentCounts = () => data.current ? data.current.counts : blankCounts();
+  const dateLabel = date => new Date(date).toLocaleDateString([], {year:'numeric',month:'short',day:'numeric'});
+  const dateTimeLabel = date => new Date(date).toLocaleString([], {year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+  function statsFor(counts) {
+    const attempts=countAttempts(counts), made=countMade(counts);
+    const most=DISTANCES.filter(d=>counts[d].attempts>0).sort((a,b)=>counts[b].attempts-counts[a].attempts||a-b)[0] ?? null;
+    const intermediates=DISTANCES.filter(d=>d%5!==0&&counts[d].attempts>0).sort((a,b)=>counts[b].attempts-counts[a].attempts||a-b);
+    const mostIntermediate=intermediates[0] ?? null;
+    const floor = threshold => {
+      let result=null;
+      for(const d of DISTANCES){if(counts[d].attempts===0)continue; if(counts[d].made/counts[d].attempts+1e-10>=threshold) result=d; else break;}
+      return result;
+    };
+    const aggregate = threshold => {
+      let m=0,a=0,result=null;
+      for(const d of DISTANCES){m+=counts[d].made;a+=counts[d].attempts;if(a && m/a+1e-10>=threshold)result=d;}
+      return result;
+    };
+    return {attempts,made,percent:attempts?made/attempts*100:null,average:averageDistance(counts),most,mostIntermediate,floor70:floor(.7),floor80:floor(.8),floor90:floor(.9),aggregate70:aggregate(.7),aggregate80:aggregate(.8),aggregate90:aggregate(.9)};
+  }
+  function totalCounts(sessions) {
+    const t=blankCounts();
+    sessions.forEach(s=>DISTANCES.forEach(d=>{t[d].made+=(s.counts[d]?.made||0);t[d].attempts+=(s.counts[d]?.attempts||0)}));
+    return t;
+  }
+  function allSessionsForStats() {
+    const arr=[...data.sessions].sort((a,b)=>new Date(a.date)-new Date(b.date));
+    if(data.current && countAttempts(data.current.counts)>0) arr.push({...data.current,live:true});
+    return arr.sort((a,b)=>new Date(a.date)-new Date(b.date));
+  }
+  function tableHTML(counts) {
+    const rows=DISTANCES.filter(d=>(counts[d]?.attempts||0)>0);
+    if(!rows.length)return '<div class="empty">No putts recorded yet.</div>';
+    return '<table><thead><tr><th>Distance</th><th>Made</th><th>Attempts</th><th>Make %</th></tr></thead><tbody>'+rows.map(d=>{let c=counts[d];return `<tr><td>${d} ft</td><td>${c.made}</td><td>${c.attempts}</td><td>${pct(c.made,c.attempts)}</td></tr>`}).join('')+'</tbody></table>';
+  }
+  const statDefs = [
+    ['percent','Overall Putting Percentage','Success rate (%)',0,100,'%'],
+    ['most','Most Putts','Distance (feet)',0,40,' ft'],
+    ['mostIntermediate','Most Intermediate Putts','Distance (feet)',0,40,' ft'],
+    ['floor70','All-Distance Floor · 70%','Qualifying distance (feet)',0,40,' ft'],
+    ['floor80','All-Distance Floor · 80%','Qualifying distance (feet)',0,40,' ft'],
+    ['floor90','All-Distance Floor · 90%','Qualifying distance (feet)',0,40,' ft'],
+    ['aggregate70','Aggregate Range · 70%','Qualifying distance (feet)',0,40,' ft'],
+    ['aggregate80','Aggregate Range · 80%','Qualifying distance (feet)',0,40,' ft'],
+    ['aggregate90','Aggregate Range · 90%','Qualifying distance (feet)',0,40,' ft'],
+    ['average','Average Putting Distance','Average distance (feet)',0,40,' ft']
+  ];
+  function metricValue(s,key){const v=s.stats[key];return v==null?'—':key==='percent'?v.toFixed(1)+'%':key==='average'?v.toFixed(2)+' ft':v+' ft';}
+  function metricsHTML(st) {
+    const labels=[['Most putts',st.most],['Most intermediate putts',st.mostIntermediate],['All-Distance Floor · 70%',st.floor70],['All-Distance Floor · 80%',st.floor80],['All-Distance Floor · 90%',st.floor90],['Aggregate Range · 70%',st.aggregate70],['Aggregate Range · 80%',st.aggregate80],['Aggregate Range · 90%',st.aggregate90]];
+    return '<table><thead><tr><th>Statistic</th><th>Result</th></tr></thead><tbody>'+labels.map(([name,val])=>`<tr><td>${name}</td><td>${val==null?'—':val+' ft'}</td></tr>`).join('')+'</tbody></table>';
+  }
+  function graphSVG(values, key, min, max, suffix) {
+    const W=330,H=190,L=42,R=10,T=12,B=42, pw=W-L-R,ph=H-T-B;
+    const n=values.length, x=i=>L+(n<=1?pw/2:i*pw/(n-1)), y=v=>T+(max-v)/(max-min)*ph;
+    let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${key} by session">`;
+    for(let i=0;i<=4;i++){const val=min+(max-min)*i/4, yy=y(val);svg+=`<line x1="${L}" y1="${yy}" x2="${W-R}" y2="${yy}" stroke="#42564a" stroke-width="1"/><text x="${L-6}" y="${yy+3}" fill="#b4c3b8" font-size="9" text-anchor="end">${Number(val.toFixed(1))}${suffix}</text>`;}
+    svg+=`<line x1="${L}" y1="${T}" x2="${L}" y2="${H-B}" stroke="#91a397"/><line x1="${L}" y1="${H-B}" x2="${W-R}" y2="${H-B}" stroke="#91a397"/>`;
+    const valid=values.map((v,i)=>({v,i})).filter(o=>o.v!==null&&Number.isFinite(o.v));
+    if(valid.length>1) svg+=`<polyline fill="none" stroke="#8de0a6" stroke-width="2.5" points="${valid.map(o=>`${x(o.i)},${y(o.v)}`).join(' ')}"/>`;
+    valid.forEach(o=>{svg+=`<circle cx="${x(o.i)}" cy="${y(o.v)}" r="3.5" fill="#8de0a6"><title>Session ${o.i+1}: ${o.v}${suffix}</title></circle>`;});
+    const tickIndices=[...new Set([0,Math.floor((n-1)/2),n-1])].filter(i=>i>=0&&i<n);
+    tickIndices.forEach(i=>{svg+=`<text x="${x(i)}" y="${H-25}" fill="#b4c3b8" font-size="9" text-anchor="middle">${i+1}</text>`;});
+    svg+=`<text x="${L+pw/2}" y="${H-8}" fill="#b4c3b8" font-size="10" text-anchor="middle">Sessions (oldest → newest)</text></svg>`;
+    if(!values.length) return '<div class="empty">Complete a session to see progress here.</div>';
+    if(!valid.length) return '<div class="empty">Not enough recorded results for this statistic yet.</div>'+svg;
+    return svg;
+  }
+  function renderGraphs(sessions) {
+    $('graphs').innerHTML=statDefs.map(([key,title,unit,min,max,suffix])=>{
+      const vals=sessions.map(s=>s.stats[key]);
+      const has=vals.some(v=>v!==null&&v!==undefined);
+      return `<div class="metric-card"><h3>${title}</h3><p>Y-axis: ${unit}</p><div class="chart-wrap">${has?graphSVG(vals,key,min,max,suffix):'<div class="empty">No result for this statistic yet.</div>'}</div></div>`;
+    }).join('');
+  }
+  function render() {
+    const active=!!data.current;
+    $('recordCard').classList.toggle('hidden',!active);
+    $('noSession').classList.toggle('hidden',active);
+    $('madeBtn').disabled=!active || countAttempts(currentCounts())>=GOAL;
+    $('missedBtn').disabled=!active || countAttempts(currentCounts())>=GOAL;
+    $('undoBtn').disabled=!active || !data.current.events.length;
+    if(active){
+      const c=currentCounts(), d=Number(distanceSelect.value), one=c[d], n=countAttempts(c);
+      $('sessionTitle').textContent='Session · '+dateLabel(data.current.date);
+      $('sessionProgress').textContent=`${n} / ${GOAL}`;
+      $('sessionProgressBar').style.width=(n/GOAL*100)+'%';
+      $('sessionDateNote').textContent='Started '+dateTimeLabel(data.current.date)+'. This session can span multiple days.';
+      $('madeCount').textContent=one.made;$('attemptCount').textContent=one.attempts;$('missCount').textContent=one.attempts-one.made;$('percent').textContent=pct(one.made,one.attempts);
+      $('sessionTable').innerHTML=tableHTML(c);
+    } else {$('sessionTable').innerHTML='<div class="empty">Your last session is complete. Start a new block when you are ready.</div>';}
+    const completedPlusCurrent=[...data.sessions]; if(data.current)completedPlusCurrent.push(data.current);
+    const t=totalCounts(completedPlusCurrent), st=statsFor(t);
+    $('allMade').textContent=st.made;$('allAttempts').textContent=st.attempts;$('allPct').textContent=st.percent===null?'—':st.percent.toFixed(1)+'%';
+    $('allAverageDistance').textContent=st.average===null?'—':st.average.toFixed(2)+' ft';
+    $('allTable').innerHTML=tableHTML(t);
+    $('overallMetrics').innerHTML=metricsHTML(st);
+    const hist=$('history');
+    if(!data.sessions.length) hist.innerHTML='<div class="empty">No completed sessions yet. Each completed 600-putt block will appear here.</div>';
+    else hist.innerHTML=[...data.sessions].sort((a,b)=>new Date(b.date)-new Date(a.date)).map(s=>{
+      const ss=statsFor(s.counts),breakdown=DISTANCES.filter(d=>s.counts[d].attempts>0).map(d=>`${d} ft: ${s.counts[d].made}/${s.counts[d].attempts} (${pct(s.counts[d].made,s.counts[d].attempts)})`).join(' · ');
+      return `<div class="session"><div class="sessionhead"><strong>Session · ${dateLabel(s.date)}</strong><strong>${ss.percent===null?'—':ss.percent.toFixed(1)+'%'}</strong></div><small>${ss.made} made of ${ss.attempts} putts · Average distance: ${ss.average===null?'—':ss.average.toFixed(2)+' ft'}</small><div class="session-metrics">${metricsHTML(ss)}</div><div class="session-breakdown">${breakdown}</div></div>`;
+    }).join('');
+    const graphSessions=allSessionsForStats().map(s=>({...s,stats:statsFor(s.counts)}));
+    renderGraphs(graphSessions);
+  }
+  function addPut(made) {
+    if(!data.current)return;
+    const d=Number(distanceSelect.value), c=currentCounts()[d];
+    if(countAttempts(currentCounts())>=GOAL)return;
+    c.attempts++;if(made)c.made++;
+    data.current.events.push({d,made,at:Date.now()});
+    if(countAttempts(currentCounts())>=GOAL){
+      const done={id:data.current.id,date:data.current.date,counts:data.current.counts,completedAt:new Date().toISOString()};
+      data.sessions.push(done);data.current=null;save();render();
+      if(!$('completeDialog').open) $('completeDialog').showModal();
+      return;
+    }
+    save();render();
+  }
+  function undo() {
+    if(!data.current)return;
+    const e=data.current.events.pop();if(!e){alert('There are no putts to undo in this session.');return;}
+    const c=currentCounts()[e.d];c.attempts--;if(e.made)c.made--;save();render();
+  }
+  function startSession() { if(data.current)return;data.current=newSession();save();render();show('record'); }
+  function show(which) {
+    const record=which==='record';
+    $('recordView').classList.toggle('hidden',!record);$('statsView').classList.toggle('hidden',record);
+    $('recordTab').classList.toggle('active',record);$('statsTab').classList.toggle('active',!record);
+  }
+  $('madeBtn').addEventListener('click',()=>addPut(true));
+  $('missedBtn').addEventListener('click',()=>addPut(false));
+  $('undoBtn').addEventListener('click',undo);
+  $('startSessionBtn').addEventListener('click',startSession);
+  $('dialogStartBtn').addEventListener('click',()=>{$('completeDialog').close();startSession();});
+  $('laterBtn').addEventListener('click',()=>$('completeDialog').close());
+  distanceSelect.addEventListener('change',render);
+  $('recordTab').addEventListener('click',()=>show('record'));
+  $('statsTab').addEventListener('click',()=>{show('stats');render()});
+  $('exportBtn').addEventListener('click',()=>{
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='putting-tracker-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  });
+  $('clearBtn').addEventListener('click',()=>{
+    if(confirm('Delete every session and all current putts? This cannot be undone unless you have a backup.')){data={current:newSession(),sessions:[]};save();render();}
+  });
+  render();
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
+})();
+</script>
+</body>
+</html>
