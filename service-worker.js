@@ -1,4 +1,4 @@
-const CACHE_NAME = "putting-tracker-v1";
+const CACHE_NAME = "putting-tracker-v2";
 const APP_FILES = [
   "./",
   "./index.html",
